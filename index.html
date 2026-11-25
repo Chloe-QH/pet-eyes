@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>宠物眼中的你 · 让它说说它看见的你</title>
+<meta name="description" content="上传一张宠物的照片，AI 从它的眼神、姿态、它身后的房间读出：在它眼里，你是什么样的人。" />
+<meta property="og:title" content="宠物眼中的你" />
+<meta property="og:description" content="它不会说话，但它什么都看见了。" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="grain"></div>
+
+<header class="topbar">
+  <div class="brand">宠物眼中的你<span class="dot">·</span><em>PET'S EYES</em></div>
+</header>
+
+<main id="app">
+
+  <!-- ============ 1. 上传 ============ -->
+  <section class="screen screen-intro" id="screenIntro">
+    <div class="intro-kicker">一张照片 · 一次被看见</div>
+    <h1>它不会说话，<br />但它什么都看见了。</h1>
+    <p class="intro-sub">上传一张它的照片。它会从眼神、姿态、还有它身后那个房间，<br class="pc-only" />告诉你它眼里的你是什么样的人。</p>
+
+    <div class="drop" id="drop">
+      <input type="file" id="file" accept="image/*" hidden />
+      <div class="drop-empty" id="dropEmpty">
+        <div class="drop-icon">🐾</div>
+        <div class="drop-main">点这里选一张照片</div>
+        <div class="drop-hint">正面、光线正常、能看到它待的地方最好</div>
+      </div>
+      <div class="drop-filled" id="dropFilled" hidden>
+        <img id="preview" alt="宠物照片预览" />
+        <button type="button" class="drop-change" id="changeBtn">换一张</button>
+      </div>
+    </div>
+
+    <div class="meta-row">
+      <div class="field">
+        <label for="petName">它叫什么</label>
+        <input id="petName" type="text" maxlength="12" placeholder="例如：豆包" />
+      </div>
+      <div class="field">
+        <label for="petKind">它是</label>
+        <select id="petKind">
+          <option value="猫">猫</option>
+          <option value="狗">狗</option>
+          <option value="其他小动物">其他小动物</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="cta" id="startBtn" disabled>让它看看我</button>
+
+    <p class="privacy">照片只在你的浏览器里压缩后直接送给模型分析，不会存到任何服务器。别传带人脸的合照。</p>
+
+    <div class="stage-line" id="stageLine"></div>
+  </section>
+
+  <!-- ============ 2. 分析中 ============ -->
+  <section class="screen screen-loading" id="screenLoading" hidden>
+    <div class="scan-wrap">
+      <div class="scan-photo"><img id="scanImg" alt="" /></div>
+      <div class="scan-line"></div>
+    </div>
+    <ul class="steps" id="steps"></ul>
+  </section>
+
+  <!-- ============ 3. 结果 ============ -->
+  <section class="screen screen-result" id="screenResult" hidden>
+
+    <div class="hero" id="hero">
+      <div class="hero-label">在它眼里，你是</div>
+      <h2 class="persona" id="persona">—</h2>
+      <div class="persona-sub" id="personaSub">—</div>
+      <p class="verdict" id="verdict"></p>
+      <div class="hero-photo"><img id="resultImg" alt="你的宠物" /></div>
+    </div>
+
+    <div class="scores" id="scores">
+      <div class="sec-title">你们之间的三个数</div>
+      <div class="score" data-k="trust">
+        <div class="score-head"><span>信任度</span><b id="vTrust">0</b></div>
+        <div class="bar"><i id="bTrust"></i></div>
+        <p class="score-note" id="nTrust"></p>
+      </div>
+      <div class="score" data-k="depend">
+        <div class="score-head"><span>依赖度</span><b id="vDepend">0</b></div>
+        <div class="bar"><i id="bDepend"></i></div>
+        <p class="score-note" id="nDepend"></p>
+      </div>
+      <div class="score" data-k="sync">
+        <div class="score-head"><span>默契值</span><b id="vSync">0</b></div>
+        <div class="bar"><i id="bSync"></i></div>
+        <p class="score-note" id="nSync"></p>
+      </div>
+    </div>
+
+    <div class="dims" id="dims">
+      <div class="sec-title">它看见的五件事</div>
+    </div>
+
+    <div class="contrast" id="contrast">
+      <div class="sec-title">你以为的 vs 它眼里的</div>
+      <div class="contrast-grid">
+        <div class="cc you">
+          <div class="cc-tag">你以为</div>
+          <p id="cYou">—</p>
+        </div>
+        <div class="cc it">
+          <div class="cc-tag">它眼里</div>
+          <p id="cIt">—</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="quote-block">
+      <div class="qmark">“</div>
+      <p class="quote" id="quote">—</p>
+      <div class="qsign" id="qSign">它说</div>
+    </div>
+
+    <div class="wishes" id="wishes">
+      <div class="sec-title">它偷偷希望的三件事</div>
+      <ul id="wishList"></ul>
+    </div>
+
+    <div class="actions">
+      <button class="cta" id="cardBtn">生成分享卡片</button>
+      <button class="ghost" id="copyBtn">复制一句话发出去</button>
+      <button class="ghost" id="againBtn">再测一只</button>
+    </div>
+
+    <div class="disclaimer">这是一次基于画面线索的温柔推测，不是科学鉴定。它真正想说的，你比谁都清楚。</div>
+  </section>
+
+</main>
+
+<!-- 卡片弹窗 -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-bg" id="modalBg"></div>
+  <div class="modal-body">
+    <canvas id="cardCanvas" width="1080" height="1440"></canvas>
+    <div class="modal-actions">
+      <a class="cta" id="downloadBtn" download="宠物眼中的你.png">保存到相册</a>
+      <button class="ghost" id="closeBtn">关闭</button>
+    </div>
+    <p class="modal-hint">手机长按图片也能保存。发出去的时候，记得带上它的名字。</p>
+  </div>
+</div>
+
+<footer class="foot">
+  <span>宠物眼中的你</span>
+  <span class="sep">·</span>
+  <span>宠物的口吻，人的心</span>
+  <span class="dev" id="devLink" hidden>接入模型</span>
+</footer>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
