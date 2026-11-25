@@ -710,6 +710,9 @@ $("downloadBtn").addEventListener("click", () => {
 /* ---------------- 调试入口（本地填 Key，线上不用） ---------------- */
 (function debugEntry() {
   if (resolveEndpoint().url) return;
+  // 只在本地预览时露出，线上不显示这个半成品入口
+  const local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) || location.protocol === "file:";
+  if (!local && !/dev=1/.test(location.search)) return;
   const link = $("devLink");
   if (!link) return;
   link.hidden = false;
