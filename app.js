@@ -41,19 +41,22 @@ const SYSTEM_PROMPT = [
   "人形暖炉（安全基地型）、长期饭票（供养者型）、移动沙发（被依赖的柔软）、边界感室友（互相尊重型）、焦虑型家长（过度关心型）、零食供应商（有条件的朋友）、家里的第二只动物（平等玩伴型）、情绪中转站（承接者型）、巢穴设计师（收藏家型）、高定保姆（精细养育型）、老友（多年默契型）、观察员（静静看着型）。",
   "若都不贴，选最接近的一个，名字必须落在这 12 个里。",
   "",
-  "【输出格式】只返回一个 JSON 对象，不要任何解释、不要 markdown 代码块、不要前后缀。字段：",
-  '{"persona":"","personaSub":"","verdict":"","scores":{"trust":0,"depend":0,"sync":0},"scoreNotes":{"trust":"","depend":"","sync":""},"dimensions":[{"key":"gaze","label":"眼神","title":"","evidence":"","insight":""},…共5个],"contrast":{"youThink":"","itSees":""},"quote":"","wishes":["","",""],"caption":""}',
+  "【输出格式】只返回一个 JSON 对象，不要任何解释、不要 markdown 代码块、不要前后缀。字段与字数上限：",
+  '{"persona":"必须是12个人格之一","personaSub":"其副标题","verdict":"≤16字","scores":{"trust":85,"depend":78,"sync":62},"scoreNotes":{"trust":"≤22字","depend":"≤22字","sync":"≤22字"},"dimensions":[{"key":"gaze","label":"眼神","title":"≤10字","evidence":"≤34字","insight":"≤28字"},{"key":"distance","label":"距离",…},{"key":"care","label":"照料",…},{"key":"home","label":"家的秩序",…},{"key":"role","label":"角色",…}],"contrast":{"youThink":"≤24字","itSees":"≤24字"},"quote":"≤28字","wishes":["≤16字","≤16字","≤16字"],"caption":"≤32字"}',
+  "输出前逐项自查字数：任何一句超过上限就整句重写成更短的版本，不要靠省略号截断。",
   "",
   "【硬性规则】",
   "1. 主语句永远是它，人是被观察的一方。禁止评价人的外貌、身材、年龄、收入、职业、性格缺陷。",
   "2. 每条 evidence 必须是一条照片里真的能看见的东西，具体到可以看出位置和状态，不许写成空泛的形容词。",
   "3. 三个分数 0-100，参考：信任度看睡姿与背对程度，依赖度看它与人的物理距离，默契值看它看向的方向和人的动作是否同步。分数不要全高，允许有短板，短板才真实。",
-  "4. verdict 不超过 18 字，是一句有画面的判断，不要鸡汤。",
-  "5. quote 是宠物用第一人称说给主人听的一句话，不超过 26 字，具体、有生活细节、不肉麻。",
-  "6. caption 是主人发社交媒体时会配的一句话，不超过 40 字，带一点自嘲或反差更好。",
-  "7. 不评价宠物美丑胖瘦，不做医疗、喂养、训练建议。",
-  "8. 不确定就软化：看起来、也许、我猜。语气温暖、具体、有一点点幽默，不要感叹号堆砌。",
-  "9. 全部用简体中文。"
+  "4. 【字数上限，超了会被截断】verdict ≤16 字；quote ≤28 字；每条 scoreNotes ≤22 字；每条 evidence ≤34 字；每条 insight ≤28 字；每条 wishes ≤16 字；caption ≤32 字；每个 title ≤10 字。这条最重要，宁可少说。",
+  "5. verdict 是一句能想象出画面的短判断，主语是它，不要形容词堆叠，不要鸡汤，不要用比喻讲道理。",
+  "6. scoreNotes 只写结论，不写推理过程，不要用分号串好几条理由。",
+  "7. quote 是宠物用第一人称说给主人听的一句话，要有具体的声音或动作，像随口说的，不要诗，不要抒情。",
+  "8. caption 是主人发小红书会配的一句，带自嘲或反差。",
+  "9. 不评价宠物美丑胖瘦，不做医疗、喂养、训练建议。",
+  "10. 不确定就软化：看起来、也许、我猜。语气温暖、具体、有一点点幽默。",
+  "11. 全部用简体中文，不要用英文、不要用表情符号。"
 ].join("\n");
 
 const STEPS = [
@@ -68,6 +71,18 @@ const STEPS = [
 
 const $ = (id) => document.getElementById(id);
 const num = (v, d = 60) => Math.max(5, Math.min(100, Math.round(Number(v) || d)));
+
+/* 按字数上限软化截断：优先在标点处收，实在没有就补省略号 */
+function clampText(s, n) {
+  s = String(s == null ? "" : s).replace(/\s+/g, " ").trim();
+  if (s.length <= n) return s;
+  const head = s.slice(0, n);
+  const marks = ["，", "。", "、", "；", "！", "？", ",", "."];
+  let idx = -1;
+  marks.forEach((m) => { idx = Math.max(idx, head.lastIndexOf(m)); });
+  if (idx >= n * 0.55) return head.slice(0, idx);
+  return head.slice(0, n - 1) + "…";
+}
 
 function store(k, v) {
   try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { }
@@ -252,7 +267,20 @@ function normalize(r) {
       }
       : { key: f[0], label: f[1], title: f[2], evidence: f[3], insight: f[4] });
   });
-  if (!out.quote.trim() && r.quote) out.quote = String(r.quote);
+  // 兜底截断，保证任何长度都不会撑破版面
+  out.personaSub = clampText(out.personaSub, 9);
+  out.verdict = clampText(out.verdict, 18);
+  out.quote = clampText(out.quote, 28);
+  out.caption = clampText(out.caption, 32);
+  ["trust", "depend", "sync"].forEach((k) => { out.scoreNotes[k] = clampText(out.scoreNotes[k], 22); });
+  out.contrast.youThink = clampText(out.contrast.youThink, 26);
+  out.contrast.itSees = clampText(out.contrast.itSees, 26);
+  out.dimensions.forEach((d) => {
+    d.title = clampText(d.title, 12);
+    d.evidence = clampText(d.evidence, 34);
+    d.insight = clampText(d.insight, 28);
+  });
+  out.wishes = out.wishes.map((w) => clampText(w, 18));
   return out;
 }
 
@@ -615,7 +643,7 @@ function drawCard(r) {
     ctx.textAlign = "left";
 
     // 金句
-    wrapText(ctx, r.quote, 96, sy0 + 142, 888, 54, "700 38px " + FONT, "#23201C", 2);
+    wrapText(ctx, r.quote, 96, sy0 + 142, 888, 50, "700 34px " + FONT, "#23201C", 2);
 
     // 底部
     ctx.strokeStyle = "rgba(35,32,28,.12)";

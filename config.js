@@ -11,8 +11,8 @@ window.PET_CONFIG = {
   // 阿里云百炼（DashScope）OpenAI 兼容地址
   directEndpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
 
-  // 推荐模型：qwen-vl-max-latest（中文 + 图像理解在这类"看图说人"任务上表现稳）
-  model: "qwen-vl-max-latest",
+  // 默认模型：qwen3-vl-plus（实测该账号下可用；qwen-vl-max-latest 返回 403、qwen-vl-plus 返回 404）
+  model: "qwen3-vl-plus",
 
   // 不要把 Key 写在这里（会随网页公开）。留空即可。
   apiKey: ""

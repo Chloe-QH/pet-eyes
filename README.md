@@ -64,7 +64,7 @@ python -m http.server 8765
 
 ## 模型
 
-默认 `qwen-vl-max-latest`（阿里云百炼，OpenAI 兼容接口）。改动点在 `config.js` 的 `model` 字段，可选 `qwen-vl-plus`、`qwen3-vl-plus`。备选供应商：智谱 `glm-4.5v`，同样兼容 OpenAI 格式，改 endpoint 与 model 即可。
+默认 `qwen3-vl-plus`（阿里云百炼，OpenAI 兼容接口）。实测该账号下 `qwen-vl-max-latest` 返回 403、`qwen-vl-plus` 返回 404，所以默认用了 `qwen3-vl-plus`。改模型只需动 `config.js` 的 `model` 字段。备选供应商：智谱 `glm-4.5v`，同样兼容 OpenAI 格式，改 endpoint 与 model 即可。
 
 ## 已知取舍
 

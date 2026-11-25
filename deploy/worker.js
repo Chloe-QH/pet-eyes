@@ -9,7 +9,7 @@
  */
 
 const UPSTREAM = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
-const ALLOW_MODELS = ["qwen-vl-max-latest", "qwen-vl-plus", "qwen3-vl-plus"];
+const ALLOW_MODELS = ["qwen3-vl-plus", "qwen3-vl-max", "qwen-vl-max-latest"];
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
