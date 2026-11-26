@@ -550,3 +550,41 @@ h1 em{
 .se-note{margin:8px 0 18px;font-size:13px;line-height:1.7;color:var(--ink-2)}
 .scan-error .cta{margin:0}
 .se-detail{margin-top:12px;font-size:11px;color:var(--ink-3);word-break:break-all}
+
+
+/* ---------- 结果打码（后收费模式） ---------- */
+.result-blur { transition: filter .45s ease, opacity .45s ease; }
+.locked .result-blur { filter: blur(4.6px); opacity: .72; user-select: none; pointer-events: none; }
+.actions button:disabled, .actions a:disabled { opacity: .32; pointer-events: none; }
+
+.lockbar {
+  margin: 26px 0 4px;
+  padding: 18px 18px 20px;
+  border: 1px solid rgba(242,180,106,.28);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(242,180,106,.12), rgba(242,180,106,.03));
+  text-align: center;
+}
+.lb-note { font-size: 13px; letter-spacing: .04em; color: rgba(243,237,228,.62); margin-bottom: 12px; }
+.lb-btn {
+  width: 100%;
+  border: 0;
+  padding: 15px 0;
+  border-radius: 14px;
+  font: 600 16px/1 inherit;
+  color: #1A1209;
+  background: linear-gradient(135deg, #F7C57E, #E79A45);
+  box-shadow: 0 10px 26px rgba(231,154,69,.28);
+  cursor: pointer;
+}
+
+.ps-link {
+  display: inline-block;
+  margin-top: 8px;
+  color: #F2B46A;
+  font-size: 13px;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(242,180,106,.5);
+}
+
+#cardImg { width: 100%; height: auto; display: block; border-radius: 16px; }
