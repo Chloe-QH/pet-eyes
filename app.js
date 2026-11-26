@@ -1215,10 +1215,11 @@ $("downloadBtn").addEventListener("click", () => {
     acceptFile(f);
     $("petName").value = "豆包";
     if (/auto=1/.test(location.search)) {
-      setTimeout(() => {
-        if (/unlock=1/.test(location.search) || isAdmin) { $("startBtn").click(); }
-        else { $("startBtn").click(); }
-      }, 200);
+      const fire = () => {
+        if ($("startBtn").disabled) return setTimeout(fire, 250);
+        $("startBtn").click();
+      };
+      setTimeout(fire, 300);
     }
   }).catch((e) => console.warn("[dev]", e));
 })();
