@@ -3,82 +3,116 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>宠物眼中的你 · 让它说说它看见的你</title>
-<meta name="description" content="上传一张宠物的照片，AI 从它的眼神、姿态、它身后的房间读出：在它眼里，你是什么样的人。" />
+<title>宠物眼中的你 · 它一直在看你</title>
+<meta name="description" content="上传一张宠物的照片，它会把在它眼里你是个什么样的人，说给你听。" />
+<meta name="theme-color" content="#0A0806" />
 <meta property="og:title" content="宠物眼中的你" />
-<meta property="og:description" content="它不会说话，但它什么都看见了。" />
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>" />
+<meta property="og:description" content="它不会说话。但它一直在看你。" />
+<meta property="og:image" content="assets/hero-eye.jpg" />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23120d08'/><ellipse cx='50' cy='50' rx='17' ry='29' fill='%23F2B46A'/></svg>" />
+<link rel="preload" as="image" href="assets/hero-eye.jpg" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<div class="grain"></div>
+<div class="aura" id="aura" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
 
 <header class="topbar">
-  <div class="brand">宠物眼中的你<span class="dot">·</span><em>PET'S EYES</em></div>
+  <div class="brand"><span class="brand-eye"></span><span>宠物眼中的你</span><em>PET'S EYES</em></div>
+  <div class="brand-right" id="brandRight"></div>
 </header>
 
 <main id="app">
 
-  <!-- ============ 1. 上传 ============ -->
-  <section class="screen screen-intro" id="screenIntro">
-    <div class="intro-kicker">一张照片 · 一次被看见</div>
-    <h1>它不会说话，<br />但它什么都看见了。</h1>
-    <p class="intro-sub">上传一张它的照片。它会从眼神、姿态、还有它身后那个房间，<br class="pc-only" />告诉你它眼里的你是什么样的人。</p>
+  <!-- ================= 首屏 ================= -->
+  <section class="screen intro" id="screenIntro">
+    <div class="hero-eye" aria-hidden="true"></div>
+    <div class="hero-veil" aria-hidden="true"></div>
 
-    <div class="drop" id="drop">
-      <input type="file" id="file" accept="image/*" hidden />
-      <div class="drop-empty" id="dropEmpty">
-        <div class="drop-icon">🐾</div>
-        <div class="drop-main">点这里选一张照片</div>
-        <div class="drop-hint">正面、光线正常、能看到它待的地方最好</div>
+    <div class="intro-inner">
+      <div class="kicker"><i></i>它眼里的你 · 一次被看见</div>
+      <h1>它不会说话<br /><em>但它一直在看你</em></h1>
+      <p class="lead">上传一张它的照片。<br />它会把看见的你，一字一句说给你听。</p>
+
+      <div class="drop" id="drop">
+        <input type="file" id="file" accept="image/*" hidden />
+        <div class="drop-empty" id="dropEmpty">
+          <div class="drop-icon"><span></span></div>
+          <div class="drop-main">选一张它的照片</div>
+          <div class="drop-hint">正面、光线正常、能看到它待的地方最好</div>
+        </div>
+        <div class="drop-filled" id="dropFilled" hidden>
+          <img id="preview" alt="宠物照片预览" />
+          <button type="button" class="drop-change" id="changeBtn">换一张</button>
+        </div>
       </div>
-      <div class="drop-filled" id="dropFilled" hidden>
-        <img id="preview" alt="宠物照片预览" />
-        <button type="button" class="drop-change" id="changeBtn">换一张</button>
+
+      <div class="fields">
+        <label class="field">
+          <span>它叫什么</span>
+          <input id="petName" type="text" maxlength="10" placeholder="豆包" />
+        </label>
+        <label class="field">
+          <span>它是</span>
+          <select id="petKind">
+            <option value="猫">猫</option>
+            <option value="狗">狗</option>
+            <option value="其他小动物">其他小动物</option>
+          </select>
+        </label>
       </div>
+
+      <button class="cta" id="startBtn" disabled>
+        <span class="cta-txt">让它看看我</span>
+        <span class="cta-price" id="ctaPrice">￥0.98 / 次</span>
+      </button>
+
+      <p class="under-cta">先免费看它三个「取景读数」，再决定要不要听完整版。</p>
+
+      <div class="last-record" id="lastRecord" hidden></div>
+
+      <p class="privacy">照片在你的浏览器里压缩后直接送去分析，不经过任何中转服务器。别传带人脸的合照。</p>
     </div>
 
-    <div class="meta-row">
-      <div class="field">
-        <label for="petName">它叫什么</label>
-        <input id="petName" type="text" maxlength="12" placeholder="例如：豆包" />
-      </div>
-      <div class="field">
-        <label for="petKind">它是</label>
-        <select id="petKind">
-          <option value="猫">猫</option>
-          <option value="狗">狗</option>
-          <option value="其他小动物">其他小动物</option>
-        </select>
-      </div>
-    </div>
-
-    <button class="cta" id="startBtn" disabled>让它看看我</button>
-
-    <p class="privacy">照片只在你的浏览器里压缩后直接送给模型分析，不会存到任何服务器。别传带人脸的合照。</p>
-
-    <div class="stage-line" id="stageLine"></div>
+    <div class="scroll-cue" aria-hidden="true"><i></i></div>
   </section>
 
-  <!-- ============ 2. 分析中 ============ -->
-  <section class="screen screen-loading" id="screenLoading" hidden>
-    <div class="scan-wrap">
-      <div class="scan-photo"><img id="scanImg" alt="" /></div>
-      <div class="scan-line"></div>
+  <!-- ================= 扫描中 ================= -->
+  <section class="screen scan" id="screenScan" hidden>
+    <div class="scan-head">
+      <div class="scan-kicker">它在看你</div>
+      <div class="scan-photo">
+        <img id="scanImg" alt="" />
+        <div class="scan-line"></div>
+        <div class="scan-corners"><i></i><i></i><i></i><i></i></div>
+      </div>
     </div>
+    <div class="scan-word" id="scanWord">正在放大它的瞳孔…</div>
+    <div class="scan-progress"><i id="scanBar"></i></div>
     <ul class="steps" id="steps"></ul>
   </section>
 
-  <!-- ============ 3. 结果 ============ -->
-  <section class="screen screen-result" id="screenResult" hidden>
+  <!-- ================= 结果 ================= -->
+  <section class="screen result" id="screenResult" hidden>
 
-    <div class="hero" id="hero">
-      <div class="hero-label">在它眼里，你是</div>
+    <div class="r-top">
+      <div class="r-label">在 <b id="rName">它</b> 眼里，你是</div>
       <h2 class="persona" id="persona">—</h2>
       <div class="persona-sub" id="personaSub">—</div>
       <p class="verdict" id="verdict"></p>
-      <div class="hero-photo"><img id="resultImg" alt="你的宠物" /></div>
+    </div>
+
+    <div class="polaroid">
+      <img id="resultImg" alt="你的宠物" />
+      <div class="polaroid-tag" id="rTag">PET'S EYES</div>
+    </div>
+
+    <div class="sweet" id="sweet">
+      <div class="sweet-q">“</div>
+      <p id="sweetTalk">—</p>
+      <div class="sweet-sign" id="sweetSign">它说</div>
     </div>
 
     <div class="scores" id="scores">
@@ -105,17 +139,26 @@
     </div>
 
     <div class="contrast" id="contrast">
-      <div class="sec-title">你以为的 vs 它眼里的</div>
+      <div class="sec-title">你以为的 · 它眼里的</div>
       <div class="contrast-grid">
-        <div class="cc you">
-          <div class="cc-tag">你以为</div>
-          <p id="cYou">—</p>
-        </div>
-        <div class="cc it">
-          <div class="cc-tag">它眼里</div>
-          <p id="cIt">—</p>
-        </div>
+        <div class="cc you"><div class="cc-tag">你以为</div><p id="cYou">—</p></div>
+        <div class="cc it"><div class="cc-tag">它眼里</div><p id="cIt">—</p></div>
       </div>
+    </div>
+
+    <div class="secret" id="secretBox">
+      <div class="sec-title">它偷偷做的一件事</div>
+      <p id="secret">—</p>
+    </div>
+
+    <div class="roast" id="roastBox">
+      <div class="sec-title">它受不了你的一点</div>
+      <p id="roast">—</p>
+    </div>
+
+    <div class="wishes" id="wishes">
+      <div class="sec-title">它偷偷希望的三件事</div>
+      <ul id="wishList"></ul>
     </div>
 
     <div class="quote-block">
@@ -124,42 +167,102 @@
       <div class="qsign" id="qSign">它说</div>
     </div>
 
-    <div class="wishes" id="wishes">
-      <div class="sec-title">它偷偷希望的三件事</div>
-      <ul id="wishList"></ul>
-    </div>
-
     <div class="actions">
-      <button class="cta" id="cardBtn">生成分享卡片</button>
-      <button class="ghost" id="copyBtn">复制一句话发出去</button>
-      <button class="ghost" id="againBtn">再测一只</button>
+      <button class="cta" id="cardBtn"><span class="cta-txt">生成分享卡（带二维码）</span></button>
+      <button class="ghost" id="copyBtn">复制小红书文案</button>
+      <button class="ghost" id="againBtn">换一张照片再测</button>
     </div>
 
-    <div class="disclaimer">这是一次基于画面线索的温柔推测，不是科学鉴定。它真正想说的，你比谁都清楚。</div>
+    <div class="disclaimer">
+      AI 生成内容，仅供娱乐，不构成任何专业判断。<br />它真正想说的，你比谁都清楚。
+    </div>
   </section>
 
 </main>
 
-<!-- 卡片弹窗 -->
+<!-- ================= 付费 / 解锁 ================= -->
+<div class="sheet" id="paySheet" hidden>
+  <div class="sheet-bg" id="payBg"></div>
+  <div class="sheet-body">
+    <div class="sheet-grip"></div>
+
+    <div class="pay-head">
+      <div class="pay-kicker">它已经抬头了</div>
+      <h3>剩下的，它只讲给愿意听的人</h3>
+      <p class="pay-sub">照片里的三个读数免费给你。完整的一次对话，<b>￥<span id="payPrice">0.98</span></b>。</p>
+    </div>
+
+    <div class="readings" id="readings"></div>
+
+    <div class="pay-steps">
+      <div class="pay-step">
+        <div class="ps-no">1</div>
+        <div class="ps-body">
+          <div class="ps-title">扫码付款 <span id="payPrice2">0.98</span> 元</div>
+          <div class="pay-qr" id="payQr">
+            <img id="payImg" alt="收款码" hidden />
+            <div class="pay-qr-missing" id="payQrMissing">
+              <b>收款码还没放进来</b>
+              把微信/支付宝收款码存成 <code>assets/pay.png</code>
+            </div>
+          </div>
+          <div class="ps-note">付款时备注一个名字，方便对账</div>
+        </div>
+      </div>
+
+      <div class="pay-step">
+        <div class="ps-no">2</div>
+        <div class="ps-body">
+          <div class="ps-title">拿到兑换码</div>
+          <div class="ps-note" id="payContact">付款后把截图发到小红书私信，30 秒内回你一个兑换码。</div>
+        </div>
+      </div>
+
+      <div class="pay-step">
+        <div class="ps-no">3</div>
+        <div class="ps-body">
+          <div class="ps-title">输入兑换码，让它说完</div>
+          <div class="code-row">
+            <input id="codeInput" type="text" inputmode="latin" autocomplete="off" placeholder="XXXX-XXXX" maxlength="16" />
+            <button id="codeBtn">解锁</button>
+          </div>
+          <div class="code-msg" id="codeMsg"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pay-foot">
+      <button class="ghost small" id="payClose">先不看</button>
+      <span>同一张照片只付一次，换照片才重新计费。</span>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 分享卡 ================= -->
 <div class="modal" id="modal" hidden>
   <div class="modal-bg" id="modalBg"></div>
   <div class="modal-body">
+    <div class="card-tabs">
+      <button class="tab on" data-tab="moments">朋友圈版<small>带二维码</small></button>
+      <button class="tab" data-tab="xhs">小红书版<small>不带码 · 防限流</small></button>
+    </div>
     <canvas id="cardCanvas" width="1080" height="1440"></canvas>
     <div class="modal-actions">
-      <a class="cta" id="downloadBtn" download="宠物眼中的你.png">保存到相册</a>
+      <a class="cta" id="downloadBtn" download="宠物眼中的你.png"><span class="cta-txt">保存到相册</span></a>
       <button class="ghost" id="closeBtn">关闭</button>
     </div>
-    <p class="modal-hint">手机长按图片也能保存。发出去的时候，记得带上它的名字。</p>
+    <p class="modal-hint">手机长按图片也能保存。发朋友圈用带码版，朋友能直接扫。</p>
   </div>
 </div>
 
 <footer class="foot">
-  <span>宠物眼中的你</span>
-  <span class="sep">·</span>
-  <span>宠物的口吻，人的心</span>
+  <span>宠物眼中的你</span><span class="sep">·</span><span>宠物的口吻，人的心</span>
   <span class="dev" id="devLink" hidden>接入模型</span>
 </footer>
 
+<canvas id="work" hidden></canvas>
+
+<script src="vendor/qrcode.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 </body>
