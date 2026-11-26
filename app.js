@@ -621,6 +621,22 @@ function demoResult() {
 
 /* ---------------- 渲染 ---------------- */
 
+function fitPersona(text) {
+  const el = $("persona");
+  if (!el) return;
+  const maxW = Math.min(560, window.innerWidth) - 52;
+  const ctx = document.createElement("canvas").getContext("2d");
+  let size = Math.min(68, Math.max(44, window.innerWidth * 0.156));
+  do {
+    ctx.font = "800 " + size + "px " + FONT_STACK;
+    if (ctx.measureText(text).width <= maxW) break;
+    size -= 2;
+  } while (size > 24);
+  el.style.fontSize = size + "px";
+  el.style.whiteSpace = "nowrap";
+}
+const FONT_STACK = '-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif';
+
 function applyPalette(name) {
   const p = PALETTE[name] || PALETTE["老友"];
   document.documentElement.style.setProperty("--accent", p[1]);
@@ -634,6 +650,7 @@ function render(r, fromCache) {
   const name = ($("petName").value || "").trim() || ("你的" + $("petKind").value);
   $("rName").textContent = name;
   $("persona").textContent = r.persona;
+  fitPersona(r.persona);
   $("personaSub").textContent = r.personaSub;
   $("verdict").textContent = r.verdict;
   $("resultImg").src = photoData.dataUrl;
@@ -744,6 +761,7 @@ async function runAnalysis() {
   show($("screenIntro"), false);
   show($("screenResult"), false);
   show($("screenScan"), true);
+  show($("scanError"), false);
   window.scrollTo({ top: 0 });
   startScan();
   if (!photoData.thumb) photoData.thumb = await makeThumb(photoData.dataUrl);
@@ -763,13 +781,18 @@ async function runAnalysis() {
   } else {
     quotaUse();
     try {
-      result = await withTimeout(callModel(photoData.dataUrl), 60000);
+      result = await withTimeout(callModel(photoData.dataUrl), 60000).catch(async (e1) => {
+        if (/Failed to fetch|NetworkError|Load failed|timeout|HTTP 5/i.test(String(e1 && e1.message || e1))) {
+          await sleep(1200);
+          return withTimeout(callModel(photoData.dataUrl), 60000);
+        }
+        throw e1;
+      });
     } catch (err) {
       console.warn("[pet-eyes]", err);
-      stopScan();
-      toast("模型没接上（" + shortErr(err) + "），检查一下网络再点一次。");
-      show($("screenScan"), false); show($("screenIntro"), true);
-      $("startBtn").disabled = false; busy = false;
+      showScanError(err);
+      busy = false;
+      $("startBtn").disabled = false;
       return;
     }
   }
@@ -782,6 +805,22 @@ async function runAnalysis() {
   busy = false;
   $("startBtn").disabled = false;
 }
+
+function showScanError(err) {
+  stopScan();
+  const k = shortErr(err);
+  $("scanErrorDetail").textContent = isAdmin ? "（" + k + "）" : "";
+  $("scanErrorTitle").textContent = /Key|401|403/.test(k) ? "它今天有点说不出口" : "它跑到一半停住了";
+  $("scanErrorMsg").textContent = "刚才那一下没接上。这张照片已经解锁，重试不会再收一次钱。";
+  show($("scanError"), true);
+}
+
+$("retryBtn").addEventListener("click", () => {
+  show($("scanError"), false);
+  $("scanErrorDetail").textContent = "";
+  busy = true;
+  runAnalysis();
+});
 
 function shortErr(e) {
   const m = String((e && e.message) || e);
@@ -1240,6 +1279,14 @@ $("downloadBtn").addEventListener("click", () => {
     }
   };
 })();
+
+/* 窗口变化时重算人格名字号 */
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+  if (!currentResult) return;
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => fitPersona(currentResult.persona), 200);
+});
 
 /* 初始化 */
 $("ctaPrice").textContent = "￥" + PRICE + " / 次";
