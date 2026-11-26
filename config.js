@@ -21,15 +21,27 @@
 window.PET_CONFIG = {
 
   /* ---- 模型 ---- */
+  provider: "zhipu",                   // zhipu = 智谱（视觉模型免费，推荐）；dashscope = 百炼（按量付费）
+  apiKey: "",                          // 填智谱 Key：open.bigmodel.cn → API Keys（形如 xxxxxxxx.yyyyyyyy）
   endpoint: "",                        // 留空 = 前端直连；填了就走网关
-  directEndpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
-  model: "qwen3-vl-plus",
-  apiKey: "sk-ws-H.XDDRIHY.cWWE.MEQCIE4zHF9SFp9ebmB5Rs0k1DQuVxIBUdkk4pUwChGH6ZTjAiAoGP_MHHHaVsYxo0xP-UZKeY3I4IHvpn73QP_HlaMjiw",
+  providers: {
+    zhipu: {
+      endpoint: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+      model: "glm-4.6v-flash"          // 免费视觉模型；更准的付费版是 glm-4.6v（1元/百万输入）
+    },
+    dashscope: {
+      endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      model: "qwen3-vl-plus"
+    }
+  },
 
   /* ---- 价格与收款 ---- */
   price: "0.98",
+  payMode: "after",                    // after = 先把结果跑出来、正文打码、付费解锁（推荐）
+                                       // before = 上传后先收费再跑模型
   payImage: "assets/pay.png",          // 你的微信/支付宝收款码
-  contactText: "付款后把截图发到小红书私信，30 秒内回你一个兑换码。",
+  contactText: "付款后把截图发到小红书私信，看到就回你一个兑换码（几小时内，不用等太久）。",
+  autoCodeUrl: "",                     // 有发卡平台（面包多/爱发电/易支付）商品页就填这里，付款后自动拿码
 
   /* ---- 额度 ---- */
   dailyLimit: 30,                      // 同一台设备每天最多调用模型 30 次（缓存命中不计数）
