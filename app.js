@@ -224,7 +224,7 @@ function toast(msg) {
 
 /* ---------------- 压缩 ---------------- */
 
-function compress(f, maxSide = 1280, quality = 0.82) {
+function compress(f, maxSide = 1024, quality = 0.8) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(f);
@@ -415,12 +415,13 @@ function removeRecord(fp) {
 
 /* ---------------- 调模型 ---------------- */
 
+const PROV = (CFG.providers && CFG.providers[CFG.provider || "zhipu"]) || {};
+
 function resolveEndpoint() {
-  const ep = CFG.endpoint || "";
+  const url = CFG.endpoint || PROV.endpoint || CFG.directEndpoint || "";
   const key = CFG.apiKey || "";
-  if (ep) return { url: ep, key };
-  if (key) return { url: CFG.directEndpoint || "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", key };
-  return { url: "", key: "" };
+  const model = PROV.model || CFG.model || "";
+  return { url, key, model };
 }
 
 function buildPrompt() {
@@ -437,7 +438,7 @@ async function callModel(dataUrl) {
   const ep = resolveEndpoint();
   if (!ep.url) throw new Error("no-endpoint");
   const body = {
-    model: CFG.model || "qwen3-vl-plus",
+    model: ep.model || "glm-4.6v-flash",
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: [{ type: "image_url", image_url: { url: dataUrl } }, { type: "text", text: buildPrompt() }] }
@@ -645,6 +646,10 @@ function applyPalette(name) {
 
 function render(r, fromCache) {
   currentResult = r;
+  const isLocked = CFG.payMode === "after" && !!photoData && !unlocked(photoData.fp);
+  $("screenResult").classList.toggle("locked", isLocked);
+  show($("lockBar"), isLocked);
+  ["cardBtn", "copyBtn", "quickSaveBtn"].forEach((id) => { const b = $(id); if (b) b.disabled = isLocked; });
   applyPalette(r.persona);
 
   const name = ($("petName").value || "").trim() || ("你的" + $("petKind").value);
@@ -737,16 +742,16 @@ $("startBtn").addEventListener("click", async () => {
     const rec = loadRecord(photoData.fp);
     if (rec) { busy = false; btnTxt.textContent = oldTxt; render(rec.result, true); return; }
 
-    // 2) 没付过：先给免费读数，再要 0.98
-    if (!unlocked(photoData.fp)) {
+    // 2) 先收费模式：先给三个读数，再要 0.98
+    if (!unlocked(photoData.fp) && CFG.payMode === "before") {
       const st = await readImageStats(photoData.dataUrl);
-      openPay(st);
+      openPay(st, "before");
       busy = false; btnTxt.textContent = oldTxt;
       $("startBtn").disabled = false;
       return;
     }
 
-    // 3) 已解锁：开跑
+    // 3) 开跑（后收费模式下，没付钱也先出结果、正文打码）
     await runAnalysis();
   } catch (e) {
     console.warn("[pet-eyes]", e);
@@ -768,6 +773,14 @@ async function runAnalysis() {
 
   const ep = resolveEndpoint();
   let result = null;
+
+  if ((!ep.url || !ep.key) && QS.get("demo") !== "1") {
+    stopScan();
+    showScanError(new Error("no-key"));
+    busy = false;
+    $("startBtn").disabled = false;
+    return;
+  }
 
   if (!ep.url || QS.get("demo") === "1") {
     await sleep(5200);
@@ -810,8 +823,13 @@ function showScanError(err) {
   stopScan();
   const k = shortErr(err);
   $("scanErrorDetail").textContent = isAdmin ? "（" + k + "）" : "";
-  $("scanErrorTitle").textContent = /Key|401|403/.test(k) ? "它今天有点说不出口" : "它跑到一半停住了";
-  $("scanErrorMsg").textContent = "刚才那一下没接上。这张照片已经解锁，重试不会再收一次钱。";
+  if (k === "没填 Key") {
+    $("scanErrorTitle").textContent = "模型还没接上";
+    $("scanErrorMsg").textContent = "站点还没填模型 Key。去 open.bigmodel.cn 免费拿一个，填进 config.js 的 apiKey 就行。";
+  } else {
+    $("scanErrorTitle").textContent = /Key|401|403/.test(k) ? "它今天有点说不出口" : "它跑到一半停住了";
+    $("scanErrorMsg").textContent = "刚才那一下没接上。这张照片已经解锁，重试不会再收一次钱。";
+  }
   show($("scanError"), true);
 }
 
@@ -825,6 +843,7 @@ $("retryBtn").addEventListener("click", () => {
 function shortErr(e) {
   const m = String((e && e.message) || e);
   if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return "网络或跨域被拦";
+  if (m === "no-key") return "没填 Key";
   if (/401|403/.test(m)) return "Key 无效";
   if (/429/.test(m)) return "额度或限流";
   if (/timeout/i.test(m)) return "等太久了";
@@ -875,7 +894,9 @@ function stopScan() {
 
 /* ---------------- 付费抽屉 ---------------- */
 
-function openPay(st) {
+function openPay(st, mode) {
+  const after = mode === "after" || (!mode && CFG.payMode === "after");
+  $("readings").hidden = after;
   const boxes = readingText(st || { light: 50, warm: 50, calm: 50 });
   $("readings").innerHTML =
     '<div class="reading"><b>' + (st ? st.light : "—") + '</b><span>光</span><em>' + boxes[0] + '</em></div>' +
@@ -885,6 +906,17 @@ function openPay(st) {
   $("payPrice").textContent = PRICE;
   $("payPrice2").textContent = PRICE;
   if (CFG.contactText) $("payContact").textContent = CFG.contactText;
+
+  $("payKicker").textContent = after ? "结果已经出来了" : "它已经抬头了";
+  $("payTitle").textContent = after ? "它后面还说了八段，打码了" : "剩下的，它只讲给愿意听的人";
+  $("paySub").innerHTML = after
+    ? "照片、人格名、三个分数免费看。它想说的那些话，<b>￥<span id=\"payPrice3\">" + PRICE + "</span></b> 解锁。"
+    : "照片里的三个读数免费给你。完整的一次对话，<b>￥<span id=\"payPrice3\">" + PRICE + "</span></b>。";
+  if (CFG.autoCodeUrl) {
+    const ac = $("autoCodeLink");
+    ac.href = CFG.autoCodeUrl;
+    ac.hidden = false;
+  }
 
   show($("paySheet"), true);
   document.body.style.overflow = "hidden";
@@ -918,8 +950,16 @@ $("codeBtn").addEventListener("click", () => {
       closePay();
       $("codeBtn").disabled = false;
       $("codeInput").value = "";
-      busy = true;
-      await runAnalysis();
+      if (currentResult && !$("screenResult").hidden) {
+        // 结果已经在本地了，直接去码，不重复花钱
+        render(currentResult, false);
+        saveRecord(currentResult, photoData && photoData.thumb);
+        window.scrollTo({ top: 0 });
+        busy = false;
+      } else {
+        busy = true;
+        await runAnalysis();
+      }
     }, 600);
   } else {
     msg.style.color = "#E0806A";
@@ -929,6 +969,60 @@ $("codeBtn").addEventListener("click", () => {
 $("codeInput").addEventListener("keydown", (e) => { if (e.key === "Enter") $("codeBtn").click(); });
 
 /* ---------------- 结果页操作 ---------------- */
+
+$("lockBtn").addEventListener("click", () => {
+  openPay(null, "after");
+});
+$("quickSaveBtn").addEventListener("click", async () => {
+  if (!currentResult) return;
+  const btn = $("quickSaveBtn");
+  const txt = btn.querySelector(".cta-txt");
+  const old = txt.textContent;
+  txt.textContent = "正在生成…";
+  try {
+    await drawCard(currentResult, "moments");
+    const cv = $("cardCanvas");
+    const blob = await new Promise((r) => cv.toBlob(r, "image/jpeg", 0.92));
+    const file = new File([blob], "宠物眼中的你.jpg", { type: "image/jpeg" });
+    // 手机上有系统分享就用系统分享（可以直接存相册/发微信）
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: "宠物眼中的你" });
+        txt.textContent = "已保存 ✓";
+      } catch (e) {
+        if (e && e.name === "AbortError") { txt.textContent = old; return; }
+        await fallbackSave(blob);
+        txt.textContent = "已保存 ✓";
+      }
+    } else {
+      await fallbackSave(blob);
+      txt.textContent = "已保存 ✓";
+    }
+    setTimeout(() => { txt.textContent = old; }, 2600);
+  } catch (e) {
+    console.warn(e);
+    toast("保存失败，可以用下面的「做一张分享卡」长按保存");
+    txt.textContent = old;
+  }
+});
+
+async function fallbackSave(blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "宠物眼中的你.jpg";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 3000);
+  // 微信/部分浏览器不认下载：把图换成可长按的 <img>，让用户长按存相册
+  const cv = $("cardCanvas");
+  $("cardImg").src = cv.toDataURL("image/jpeg", 0.92);
+  show($("cardImg"), true);
+  show($("cardCanvas"), false);
+  show($("modal"), true);
+  document.body.style.overflow = "hidden";
+  toast("长按图片 → 保存到相册");
+}
 
 $("againBtn").addEventListener("click", () => {
   show($("screenResult"), false);
@@ -970,6 +1064,8 @@ $("copyBtn").addEventListener("click", async () => {
 $("cardBtn").addEventListener("click", async () => {
   if (!currentResult) return;
   await drawCard(currentResult, cardTab);
+  show($("cardImg"), false);
+  show($("cardCanvas"), true);
   show($("modal"), true);
   document.body.style.overflow = "hidden";
 });
@@ -983,8 +1079,10 @@ function closeModal() { show($("modal"), false); document.body.style.overflow = 
     t.classList.add("on");
     cardTab = t.dataset.tab;
     if (currentResult) await drawCard(currentResult, cardTab);
+    show($("cardImg"), false);
+    show($("cardCanvas"), true);
     $("cardBtn").querySelector(".cta-txt").textContent =
-      cardTab === "moments" ? "生成分享卡（带二维码）" : "生成分享卡（小红书版）";
+      "做一张分享卡";
   });
 });
 
