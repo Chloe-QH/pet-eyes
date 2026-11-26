@@ -69,7 +69,7 @@
         <span class="cta-price" id="ctaPrice">￥0.98 / 次</span>
       </button>
 
-      <p class="under-cta">先免费看它三个「取景读数」，再决定要不要听完整版。</p>
+      <p class="under-cta">先把结果看完整：照片、人格名、三个分数免费。它想说的那些话，￥0.98 解锁。</p>
 
       <div class="last-record" id="lastRecord" hidden></div>
 
@@ -108,6 +108,11 @@
       <h2 class="persona" id="persona">—</h2>
       <div class="persona-sub" id="personaSub">—</div>
       <p class="verdict" id="verdict"></p>
+
+      <div class="lockbar" id="lockBar" hidden>
+        <div class="lb-note">它想对你说的那些话，打码了</div>
+        <button class="lb-btn" id="lockBtn">￥0.98 解锁完整版</button>
+      </div>
     </div>
 
     <div class="polaroid">
@@ -115,7 +120,7 @@
       <div class="polaroid-tag" id="rTag">PET'S EYES</div>
     </div>
 
-    <div class="sweet" id="sweet">
+    <div class="sweet result-blur" id="sweet">
       <div class="sweet-q">“</div>
       <p id="sweetTalk">—</p>
       <div class="sweet-sign" id="sweetSign">它说</div>
@@ -140,11 +145,11 @@
       </div>
     </div>
 
-    <div class="dims" id="dims">
+    <div class="dims result-blur" id="dims">
       <div class="sec-title">它看见的五件事</div>
     </div>
 
-    <div class="contrast" id="contrast">
+    <div class="contrast result-blur" id="contrast">
       <div class="sec-title">你以为的 · 它眼里的</div>
       <div class="contrast-grid">
         <div class="cc you"><div class="cc-tag">你以为</div><p id="cYou">—</p></div>
@@ -152,29 +157,30 @@
       </div>
     </div>
 
-    <div class="secret" id="secretBox">
+    <div class="secret result-blur" id="secretBox">
       <div class="sec-title">它偷偷做的一件事</div>
       <p id="secret">—</p>
     </div>
 
-    <div class="roast" id="roastBox">
+    <div class="roast result-blur" id="roastBox">
       <div class="sec-title">它受不了你的一点</div>
       <p id="roast">—</p>
     </div>
 
-    <div class="wishes" id="wishes">
+    <div class="wishes result-blur" id="wishes">
       <div class="sec-title">它偷偷希望的三件事</div>
       <ul id="wishList"></ul>
     </div>
 
-    <div class="quote-block">
+    <div class="quote-block result-blur">
       <div class="qmark">“</div>
       <p class="quote" id="quote">—</p>
       <div class="qsign" id="qSign">它说</div>
     </div>
 
     <div class="actions">
-      <button class="cta" id="cardBtn"><span class="cta-txt">生成分享卡（带二维码）</span></button>
+      <button class="cta" id="quickSaveBtn"><span class="cta-txt">一键保存这张卡</span></button>
+      <button class="ghost" id="cardBtn">做一张分享卡</button>
       <button class="ghost" id="copyBtn">复制小红书文案</button>
       <button class="ghost" id="againBtn">换一张照片再测</button>
     </div>
@@ -193,9 +199,9 @@
     <div class="sheet-grip"></div>
 
     <div class="pay-head">
-      <div class="pay-kicker">它已经抬头了</div>
-      <h3>剩下的，它只讲给愿意听的人</h3>
-      <p class="pay-sub">照片里的三个读数免费给你。完整的一次对话，<b>￥<span id="payPrice">0.98</span></b>。</p>
+      <div class="pay-kicker" id="payKicker">它已经抬头了</div>
+      <h3 id="payTitle">剩下的，它只讲给愿意听的人</h3>
+      <p class="pay-sub" id="paySub">照片里的三个读数免费给你。完整的一次对话，<b>￥<span id="payPrice">0.98</span></b>。</p>
     </div>
 
     <div class="readings" id="readings"></div>
@@ -220,7 +226,8 @@
         <div class="ps-no">2</div>
         <div class="ps-body">
           <div class="ps-title">拿到兑换码</div>
-          <div class="ps-note" id="payContact">付款后把截图发到小红书私信，30 秒内回你一个兑换码。</div>
+          <div class="ps-note" id="payContact">付款后把截图发到小红书私信，看到就回你一个兑换码。</div>
+          <a class="ps-link" id="autoCodeLink" href="#" hidden>或在发卡页自助拿码 →</a>
         </div>
       </div>
 
@@ -249,15 +256,16 @@
   <div class="modal-bg" id="modalBg"></div>
   <div class="modal-body">
     <div class="card-tabs">
-      <button class="tab on" data-tab="moments">朋友圈版<small>带二维码</small></button>
-      <button class="tab" data-tab="xhs">小红书版<small>不带码 · 防限流</small></button>
+      <button class="tab on" data-tab="moments">朋友圈版</button>
+      <button class="tab" data-tab="xhs">小红书版</button>
     </div>
     <canvas id="cardCanvas" width="1080" height="1440"></canvas>
+    <img id="cardImg" alt="分享卡" hidden />
     <div class="modal-actions">
       <a class="cta" id="downloadBtn" download="宠物眼中的你.png"><span class="cta-txt">保存到相册</span></a>
       <button class="ghost" id="closeBtn">关闭</button>
     </div>
-    <p class="modal-hint">手机长按图片也能保存。发朋友圈用带码版，朋友能直接扫。</p>
+    <p class="modal-hint">手机长按图片也能保存。两个版本内容一样，选顺手的那个发。</p>
   </div>
 </div>
 
